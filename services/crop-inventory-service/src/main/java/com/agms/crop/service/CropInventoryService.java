@@ -2,6 +2,7 @@ package com.agms.crop.service;
 
 import com.agms.crop.dto.CreateCropRequest;
 import com.agms.crop.dto.UpdateCropStatusRequest;
+import com.agms.crop.exception.BadRequestException;
 import com.agms.crop.exception.NotFoundException;
 import com.agms.crop.model.CropBatch;
 import com.agms.crop.model.CropStatus;
@@ -34,11 +35,30 @@ public class CropInventoryService {
         if (existing == null) {
             throw new NotFoundException("Crop batch not found: " + id);
         }
+
+        CropStatus current = existing.getStatus();
+        CropStatus next = request.getStatus();
+        if (!isValidTransition(current, next)) {
+            throw new BadRequestException("Invalid crop lifecycle transition: " + current + " -> " + next);
+        }
+
         existing.setStatus(request.getStatus());
         return existing;
     }
 
     public List<CropBatch> list() {
         return batches.values().stream().toList();
+    }
+
+    private boolean isValidTransition(CropStatus current, CropStatus next) {
+        if (current == next) {
+            return true;
+        }
+
+        return switch (current) {
+            case SEEDLING -> next == CropStatus.VEGETATIVE;
+            case VEGETATIVE -> next == CropStatus.HARVESTED;
+            case HARVESTED -> false;
+        };
     }
 }
