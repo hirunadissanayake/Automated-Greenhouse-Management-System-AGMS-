@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   createCrop,
   createZone,
@@ -53,6 +53,23 @@ function App() {
     manualDeviceId.trim() &&
     Number.isFinite(Number(manualTemp)) &&
     Number.isFinite(Number(manualHumidity));
+
+  useEffect(() => {
+    const tabLabel = activeTab.charAt(0).toUpperCase() + activeTab.slice(1);
+    setStatusKind('info');
+    setStatusMessage(`${tabLabel} workspace ready.`);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (statusKind === 'error') {
+      return;
+    }
+    const timer = setTimeout(() => {
+      setStatusKind('info');
+      setStatusMessage('Ready');
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, [statusMessage, statusKind]);
 
   function setInfo(message) {
     setStatusKind('info');
