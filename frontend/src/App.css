@@ -129,8 +129,15 @@ select {
   padding: 0.5rem 0.9rem;
   background: #1d5f2f;
   color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   transition: transform 0.2s ease, filter 0.2s ease, opacity 0.2s ease;
+}
+
+.btn-stable {
+  min-width: 8.2rem;
 }
 
 .btn-ghost {

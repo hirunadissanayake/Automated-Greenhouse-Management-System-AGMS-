@@ -440,7 +440,11 @@ function App() {
                 Quantity
                 <input type="number" value={cropQty} onChange={(e) => setCropQty(e.target.value)} />
               </label>
-              <button type="submit" className="btn" disabled={!canCallApi || !cropFormValid || busyAction === 'createCrop'}>
+              <button
+                type="submit"
+                className="btn btn-stable"
+                disabled={!canCallApi || !cropFormValid || busyAction === 'createCrop'}
+              >
                 {busyAction === 'createCrop' ? 'Creating...' : 'Create Batch'}
               </button>
             </form>
