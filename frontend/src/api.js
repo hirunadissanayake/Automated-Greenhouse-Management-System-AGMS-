@@ -21,6 +21,24 @@ export async function createZone(baseUrl, token, payload) {
   return res.json();
 }
 
+export async function updateZone(baseUrl, token, zoneId, payload) {
+  const res = await fetch(`${baseUrl}/api/zones/${zoneId}`, {
+    method: 'PUT',
+    headers: jsonHeaders(token),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Update zone failed (${res.status})`);
+  return res.json();
+}
+
+export async function deleteZone(baseUrl, token, zoneId) {
+  const res = await fetch(`${baseUrl}/api/zones/${zoneId}`, {
+    method: 'DELETE',
+    headers: jsonHeaders(token),
+  });
+  if (!res.ok) throw new Error(`Delete zone failed (${res.status})`);
+}
+
 export async function fetchCrops(baseUrl, token) {
   const res = await fetch(`${baseUrl}/api/crops`, {
     headers: jsonHeaders(token),
@@ -55,6 +73,15 @@ export async function fetchAutomationLogs(baseUrl, token) {
   });
   if (!res.ok) throw new Error(`Automation logs request failed (${res.status})`);
   return res.json();
+}
+
+export async function processAutomation(baseUrl, token, payload) {
+  const res = await fetch(`${baseUrl}/api/automation/process`, {
+    method: 'POST',
+    headers: jsonHeaders(token),
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(`Automation process failed (${res.status})`);
 }
 
 export async function fetchLatestSensor(baseUrl, token) {
