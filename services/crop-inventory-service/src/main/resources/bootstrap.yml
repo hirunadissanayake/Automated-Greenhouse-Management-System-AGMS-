@@ -1,0 +1,5 @@
+spring:
+  application:
+    name: crop-inventory-service
+  config:
+    import: optional:configserver:http://localhost:8888

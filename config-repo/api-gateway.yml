@@ -1,0 +1,28 @@
+server:
+  port: 8080
+
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: zone-service
+          uri: lb://zone-service
+          predicates:
+            - Path=/api/zones/**
+        - id: sensor-telemetry-service
+          uri: lb://sensor-telemetry-service
+          predicates:
+            - Path=/api/sensors/**
+        - id: automation-service
+          uri: lb://automation-service
+          predicates:
+            - Path=/api/automation/**
+        - id: crop-inventory-service
+          uri: lb://crop-inventory-service
+          predicates:
+            - Path=/api/crops/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka

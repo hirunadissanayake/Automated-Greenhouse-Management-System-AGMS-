@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: config-server
+  cloud:
+    config:
+      server:
+        git:
+          uri: file://${user.dir}/config-repo
+          default-label: main
+          clone-on-start: false
+
+server:
+  port: 8888
