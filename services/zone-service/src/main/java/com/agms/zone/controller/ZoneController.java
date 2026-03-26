@@ -5,6 +5,7 @@ import com.agms.zone.dto.UpdateZoneRequest;
 import com.agms.zone.model.Zone;
 import com.agms.zone.service.ZoneService;
 import jakarta.validation.Valid;
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,6 +31,11 @@ public class ZoneController {
     @ResponseStatus(HttpStatus.CREATED)
     public Zone create(@Valid @RequestBody CreateZoneRequest request) {
         return zoneService.create(request);
+    }
+
+    @GetMapping
+    public List<Zone> list() {
+        return zoneService.list();
     }
 
     @GetMapping("/{id}")

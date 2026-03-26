@@ -7,6 +7,7 @@ import com.agms.zone.exception.NotFoundException;
 import com.agms.zone.integration.ExternalIotDeviceClient;
 import com.agms.zone.model.Zone;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,6 +47,10 @@ public class ZoneService {
             throw new NotFoundException("Zone not found: " + id);
         }
         return zone;
+    }
+
+    public List<Zone> list() {
+        return zones.values().stream().toList();
     }
 
     public Zone update(String id, UpdateZoneRequest request) {
