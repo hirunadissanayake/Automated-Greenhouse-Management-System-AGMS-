@@ -75,12 +75,14 @@ label {
 
 input,
 textarea,
+select,
 button {
   font: inherit;
 }
 
 input,
-textarea {
+textarea,
+select {
   border-radius: 0.7rem;
   border: 1px solid rgba(20, 52, 30, 0.2);
   padding: 0.6rem 0.7rem;
@@ -119,6 +121,38 @@ textarea {
 
 .tabs .active {
   background: #b66c04;
+}
+
+.btn {
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 0.9rem;
+  background: #1d5f2f;
+  color: #fff;
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease, opacity 0.2s ease;
+}
+
+.btn-ghost {
+  background: #eef4eb;
+  color: #173521;
+  border: 1px solid rgba(20, 52, 30, 0.2);
+}
+
+.btn-danger {
+  background: #8e2d23;
+}
+
+.btn-accent {
+  background: #b66c04;
+}
+
+button:disabled,
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
 }
 
 .panel {
@@ -182,6 +216,12 @@ textarea {
   color: #5b6d61;
 }
 
+.hint {
+  color: #496652;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.72rem;
+}
+
 .metric-stack p {
   margin: 0.2rem 0;
 }
@@ -197,6 +237,18 @@ textarea {
   align-items: center;
   font-family: 'IBM Plex Mono', monospace;
   font-size: 0.8rem;
+}
+
+.status-text.info {
+  color: #efffeb;
+}
+
+.status-text.ok {
+  color: #a7ffb6;
+}
+
+.status-text.error {
+  color: #ffb8a9;
 }
 
 .ok {
