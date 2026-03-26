@@ -52,6 +52,25 @@ mvn -pl services/sensor-telemetry-service spring-boot:run
 mvn -pl services/crop-inventory-service spring-boot:run
 ```
 
+## Frontend (React Dashboard)
+
+Start frontend from root directory:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Frontend URL:
+
+- `http://localhost:5173`
+
+In UI connection panel:
+
+- Gateway URL: `http://localhost:8080`
+- JWT Token: paste valid Bearer token value
+
 ## API Testing
 
 - Import: `postman/AGMS.postman_collection.json`
