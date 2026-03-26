@@ -1,0 +1,161 @@
+{
+  "info": {
+    "name": "AGMS API Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Core API tests for AGMS microservices through API Gateway"
+  },
+  "item": [
+    {
+      "name": "Zone - Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{gatewayUrl}}/api/zones",
+          "host": [
+            "{{gatewayUrl}}"
+          ],
+          "path": [
+            "api",
+            "zones"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Tomato Zone\",\n  \"minTemp\": 20,\n  \"maxTemp\": 30\n}"
+        }
+      }
+    },
+    {
+      "name": "Sensor - Latest",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{gatewayUrl}}/api/sensors/latest",
+          "host": [
+            "{{gatewayUrl}}"
+          ],
+          "path": [
+            "api",
+            "sensors",
+            "latest"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Automation - Logs",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{gatewayUrl}}/api/automation/logs",
+          "host": [
+            "{{gatewayUrl}}"
+          ],
+          "path": [
+            "api",
+            "automation",
+            "logs"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Crops - Create",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{gatewayUrl}}/api/crops",
+          "host": [
+            "{{gatewayUrl}}"
+          ],
+          "path": [
+            "api",
+            "crops"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"cropName\": \"Lettuce\",\n  \"quantity\": 100\n}"
+        }
+      }
+    },
+    {
+      "name": "Crops - Update Status",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{gatewayUrl}}/api/crops/{{cropId}}/status",
+          "host": [
+            "{{gatewayUrl}}"
+          ],
+          "path": [
+            "api",
+            "crops",
+            "{{cropId}}",
+            "status"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"VEGETATIVE\"\n}"
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "gatewayUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "token",
+      "value": "replace-with-jwt"
+    },
+    {
+      "key": "cropId",
+      "value": "replace-with-created-crop-id"
+    }
+  ]
+}
