@@ -14,6 +14,46 @@ import {
 import { buildDevJwt, getJwtExpirationText } from './utils/jwt';
 import './App.css';
 
+const TAB_META = {
+  zones: {
+    label: 'Zones',
+    title: 'Climate zone control',
+    description: 'Register greenhouse zones, review thresholds, and maintain linked device assignments.',
+  },
+  crops: {
+    label: 'Crops',
+    title: 'Crop inventory lifecycle',
+    description: 'Track active crop batches and push them through seedling, vegetative, and harvested states.',
+  },
+  automation: {
+    label: 'Automation',
+    title: 'Telemetry and automation flow',
+    description: 'Inspect live telemetry, review action history, and trigger manual automation events.',
+  },
+};
+
+function formatRelativeTime(value) {
+  if (!value) {
+    return 'Waiting for telemetry';
+  }
+
+  const diffMs = Date.now() - new Date(value).getTime();
+  if (Number.isNaN(diffMs)) {
+    return 'Timestamp unavailable';
+  }
+
+  const diffMinutes = Math.round(diffMs / 60000);
+  if (Math.abs(diffMinutes) < 1) {
+    return 'Updated just now';
+  }
+  if (Math.abs(diffMinutes) < 60) {
+    return `Updated ${diffMinutes} min ago`;
+  }
+
+  const diffHours = Math.round(diffMinutes / 60);
+  return `Updated ${diffHours} hr ago`;
+}
+
 function App() {
   const [baseUrl, setBaseUrl] = useState('http://localhost:8080');
   const [token, setToken] = useState('');
@@ -44,6 +84,14 @@ function App() {
   const selectedZone = useMemo(
     () => zones.find((zone) => zone.id === manualZoneId),
     [zones, manualZoneId],
+  );
+  const vegetativeCrops = useMemo(
+    () => crops.filter((crop) => crop.status === 'VEGETATIVE').length,
+    [crops],
+  );
+  const harvestedCrops = useMemo(
+    () => crops.filter((crop) => crop.status === 'HARVESTED').length,
+    [crops],
   );
 
   const zoneFormValid = zoneName.trim() && Number(minTemp) < Number(maxTemp);
@@ -181,7 +229,7 @@ function App() {
   }
 
   async function removeZone(zoneId) {
-    if (!confirm(`Delete zone ${zoneId}?`)) {
+    if (!window.confirm(`Delete zone ${zoneId}?`)) {
       return;
     }
     try {
@@ -320,15 +368,36 @@ function App() {
     }
   }
 
+  const activeTabMeta = TAB_META[activeTab];
+
   return (
     <main className="agms-shell">
-      <header className="topbar">
-        <div className="brand-block">
+      <section className="hero-panel">
+        <div className="hero-copy">
           <p className="eyebrow">Automated Greenhouse Management System</p>
           <h1>AGMS Operations Console</h1>
-          <p className="subcopy">Monitor greenhouse APIs through one operational dashboard.</p>
+          <p className="subcopy">
+            One control surface for climate zones, crop lifecycle tracking, sensor telemetry, and automation flow.
+          </p>
+          <div className="hero-pills">
+            <span className={`status-pill ${canCallApi ? 'is-live' : 'is-muted'}`}>
+              {canCallApi ? 'Gateway authenticated' : 'JWT required'}
+            </span>
+            <span className="status-pill is-muted">{activeTabMeta.title}</span>
+          </div>
         </div>
-        <div className="connection-card">
+
+        <aside className="connection-card">
+          <div className="section-heading">
+            <div>
+              <p className="section-kicker">Connection</p>
+              <h2>Gateway access</h2>
+            </div>
+            <span className={`badge ${canCallApi ? 'badge-ok' : 'badge-neutral'}`}>
+              {canCallApi ? 'Ready' : 'Blocked'}
+            </span>
+          </div>
+
           <label>
             Gateway URL
             <input
@@ -350,20 +419,62 @@ function App() {
             <button type="button" onClick={applyDevToken} className="btn btn-accent">Generate Dev Token</button>
           </div>
           <small className="token-hint">{tokenHint}</small>
-        </div>
-      </header>
+        </aside>
+      </section>
 
-      <section className="tabs">
-        <button className={activeTab === 'zones' ? 'active' : ''} onClick={() => setActiveTab('zones')}>Zones</button>
-        <button className={activeTab === 'crops' ? 'active' : ''} onClick={() => setActiveTab('crops')}>Crops</button>
-        <button className={activeTab === 'automation' ? 'active' : ''} onClick={() => setActiveTab('automation')}>Automation</button>
+      <section className="overview-grid">
+        <article className="overview-card">
+          <p className="overview-label">Registered zones</p>
+          <strong>{zones.length}</strong>
+          <span>{zones.filter((zone) => zone.deviceId).length} zones linked to devices</span>
+        </article>
+        <article className="overview-card">
+          <p className="overview-label">Crop batches</p>
+          <strong>{crops.length}</strong>
+          <span>{vegetativeCrops} vegetative, {harvestedCrops} harvested</span>
+        </article>
+        <article className="overview-card">
+          <p className="overview-label">Automation logs</p>
+          <strong>{logs.length}</strong>
+          <span>{logs[0]?.action || 'No actions loaded yet'}</span>
+        </article>
+        <article className="overview-card">
+          <p className="overview-label">Latest telemetry</p>
+          <strong>{latestSensor ? `${latestSensor.temperature} C` : '--'}</strong>
+          <span>{formatRelativeTime(latestSensor?.capturedAt)}</span>
+        </article>
+      </section>
+
+      <section className="workspace-header">
+        <div>
+          <p className="section-kicker">Workspace</p>
+          <h2>{activeTabMeta.title}</h2>
+          <p className="section-copy">{activeTabMeta.description}</p>
+        </div>
+        <div className="tabs">
+          {Object.entries(TAB_META).map(([key, meta]) => (
+            <button
+              key={key}
+              className={activeTab === key ? 'active' : ''}
+              onClick={() => setActiveTab(key)}
+            >
+              {meta.label}
+            </button>
+          ))}
+        </div>
       </section>
 
       <section className="panel">
         {activeTab === 'zones' && (
           <div className="grid-two">
             <form onSubmit={submitZone} className="card">
-              <h2>Create Zone</h2>
+              <div className="section-heading">
+                <div>
+                  <p className="section-kicker">Create</p>
+                  <h2>New greenhouse zone</h2>
+                </div>
+                <span className="badge badge-neutral">Threshold policy</span>
+              </div>
               <label>
                 Zone Name
                 <input value={zoneName} onChange={(e) => setZoneName(e.target.value)} />
@@ -376,7 +487,7 @@ function App() {
                 Max Temp
                 <input type="number" value={maxTemp} onChange={(e) => setMaxTemp(e.target.value)} />
               </label>
-              <small className="hint">Tip: keep Min Temp lower than Max Temp.</small>
+              <small className="hint">Keep `minTemp` lower than `maxTemp` so automation rules remain valid.</small>
               <button type="submit" className="btn" disabled={!canCallApi || !zoneFormValid || busyAction === 'createZone'}>
                 {busyAction === 'createZone' ? 'Creating...' : 'Create Zone'}
               </button>
@@ -384,14 +495,17 @@ function App() {
 
             <div className="card">
               <div className="card-header">
-                <h2>Zone List</h2>
+                <div>
+                  <p className="section-kicker">Monitor</p>
+                  <h2>Zone registry</h2>
+                </div>
                 <button className="btn" onClick={loadZones} disabled={!canCallApi || busyAction === 'loadZones'}>
                   {busyAction === 'loadZones' ? 'Refreshing...' : 'Refresh'}
                 </button>
               </div>
               {editZoneId && (
                 <form className="edit-card" onSubmit={saveEdit}>
-                  <h3>Editing Zone: {editZoneId.slice(0, 8)}...</h3>
+                  <h3>Editing zone {editZoneId.slice(0, 8)}...</h3>
                   <label>
                     Zone Name
                     <input value={editZoneName} onChange={(e) => setEditZoneName(e.target.value)} />
@@ -413,8 +527,15 @@ function App() {
               <ul className="list">
                 {zones.map((zone) => (
                   <li key={zone.id}>
-                    <strong>{zone.name}</strong>
-                    <span>{zone.minTemp} - {zone.maxTemp} C</span>
+                    <div className="list-row">
+                      <div>
+                        <strong>{zone.name}</strong>
+                        <span>{zone.minTemp} - {zone.maxTemp} C</span>
+                      </div>
+                      <span className={`badge ${zone.deviceId ? 'badge-ok' : 'badge-neutral'}`}>
+                        {zone.deviceId ? 'Device linked' : 'Pending'}
+                      </span>
+                    </div>
                     <small>device: {zone.deviceId || 'pending'}</small>
                     <div className="inline-actions">
                       <button className="btn" onClick={() => beginEdit(zone)}>Edit</button>
@@ -422,7 +543,7 @@ function App() {
                     </div>
                   </li>
                 ))}
-                {zones.length === 0 && <li>No zones loaded yet.</li>}
+                {zones.length === 0 && <li className="empty-state">No zones loaded yet. Refresh after creating your first zone.</li>}
               </ul>
             </div>
           </div>
@@ -431,7 +552,13 @@ function App() {
         {activeTab === 'crops' && (
           <div className="grid-two">
             <form onSubmit={submitCrop} className="card">
-              <h2>Register Crop Batch</h2>
+              <div className="section-heading">
+                <div>
+                  <p className="section-kicker">Create</p>
+                  <h2>Register crop batch</h2>
+                </div>
+                <span className="badge badge-neutral">Inventory intake</span>
+              </div>
               <label>
                 Crop Name
                 <input value={cropName} onChange={(e) => setCropName(e.target.value)} />
@@ -451,7 +578,10 @@ function App() {
 
             <div className="card">
               <div className="card-header">
-                <h2>Crop Inventory</h2>
+                <div>
+                  <p className="section-kicker">Monitor</p>
+                  <h2>Crop inventory</h2>
+                </div>
                 <button className="btn" onClick={loadCrops} disabled={!canCallApi || busyAction === 'loadCrops'}>
                   {busyAction === 'loadCrops' ? 'Refreshing...' : 'Refresh'}
                 </button>
@@ -459,9 +589,18 @@ function App() {
               <ul className="list">
                 {crops.map((crop) => (
                   <li key={crop.id}>
-                    <strong>{crop.cropName}</strong>
-                    <span>qty: {crop.quantity}</span>
-                    <small>status: {crop.status}</small>
+                    <div className="list-row">
+                      <div>
+                        <strong>{crop.cropName}</strong>
+                        <span>qty: {crop.quantity}</span>
+                      </div>
+                      <span className={`badge ${
+                        crop.status === 'HARVESTED' ? 'badge-ok' : crop.status === 'VEGETATIVE' ? 'badge-warn' : 'badge-neutral'
+                      }`}
+                      >
+                        {crop.status}
+                      </span>
+                    </div>
                     <div className="inline-actions">
                       {crop.status === 'SEEDLING' && (
                         <button className="btn" onClick={() => markVegetative(crop.id)}>Move to VEGETATIVE</button>
@@ -472,7 +611,7 @@ function App() {
                     </div>
                   </li>
                 ))}
-                {crops.length === 0 && <li>No crop batches loaded yet.</li>}
+                {crops.length === 0 && <li className="empty-state">No crop batches loaded yet. Create a batch to begin lifecycle tracking.</li>}
               </ul>
             </div>
           </div>
@@ -482,27 +621,48 @@ function App() {
           <div className="grid-two">
             <div className="card">
               <div className="card-header">
-                <h2>Latest Sensor Reading</h2>
+                <div>
+                  <p className="section-kicker">Observe</p>
+                  <h2>Latest sensor reading</h2>
+                </div>
                 <button className="btn" onClick={loadLogsAndSensor} disabled={!canCallApi || busyAction === 'loadAutomation'}>
                   {busyAction === 'loadAutomation' ? 'Refreshing...' : 'Refresh'}
                 </button>
               </div>
               {latestSensor ? (
-                <div className="metric-stack">
-                  <p>Zone: {latestSensor.zoneId}</p>
-                  <p>Device: {latestSensor.deviceId}</p>
-                  <p>Temperature: {latestSensor.temperature}</p>
-                  <p>Humidity: {latestSensor.humidity}</p>
+                <div className="metric-grid">
+                  <div className="metric-card">
+                    <span>Zone</span>
+                    <strong>{latestSensor.zoneId}</strong>
+                  </div>
+                  <div className="metric-card">
+                    <span>Device</span>
+                    <strong>{latestSensor.deviceId}</strong>
+                  </div>
+                  <div className="metric-card">
+                    <span>Temperature</span>
+                    <strong>{latestSensor.temperature} C</strong>
+                  </div>
+                  <div className="metric-card">
+                    <span>Humidity</span>
+                    <strong>{latestSensor.humidity}%</strong>
+                  </div>
                 </div>
               ) : (
-                <p>No sensor data loaded yet.</p>
+                <p className="empty-copy">No sensor data loaded yet.</p>
               )}
             </div>
 
             <div className="card">
-              <h2>Automation Logs</h2>
+              <div className="section-heading">
+                <div>
+                  <p className="section-kicker">Operate</p>
+                  <h2>Automation queue</h2>
+                </div>
+                <span className="badge badge-neutral">{logs.length} logs</span>
+              </div>
               <form className="edit-card" onSubmit={submitManualAutomation}>
-                <h3>Manual Process Trigger</h3>
+                <h3>Manual process trigger</h3>
                 <label>
                   Zone ID
                   <select value={manualZoneId} onChange={(e) => onManualZoneChange(e.target.value)}>
@@ -537,12 +697,14 @@ function App() {
               <ul className="list">
                 {logs.map((log, idx) => (
                   <li key={`${log.zoneId}-${idx}`}>
-                    <strong>{log.action}</strong>
-                    <span>zone: {log.zoneId}</span>
+                    <div className="list-row">
+                      <strong>{log.action}</strong>
+                      <span className="badge badge-neutral">{log.zoneId}</span>
+                    </div>
                     <small>temp: {log.temperature}</small>
                   </li>
                 ))}
-                {logs.length === 0 && <li>No automation logs loaded yet.</li>}
+                {logs.length === 0 && <li className="empty-state">No automation logs loaded yet. Refresh after telemetry is available.</li>}
               </ul>
             </div>
           </div>
@@ -551,7 +713,9 @@ function App() {
 
       <footer className="status-line">
         <span className={`status-text ${statusKind}`}>{statusMessage}</span>
-        <span className={canCallApi ? 'ok' : 'warn'}>{canCallApi ? 'JWT ready' : 'JWT required'}</span>
+        <span className={`status-chip ${canCallApi ? 'status-chip-ok' : 'status-chip-warn'}`}>
+          {canCallApi ? 'JWT ready' : 'JWT required'}
+        </span>
       </footer>
     </main>
   );
