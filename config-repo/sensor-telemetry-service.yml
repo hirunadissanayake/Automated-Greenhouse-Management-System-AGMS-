@@ -1,6 +1,15 @@
 server:
   port: 8082
 
+agms:
+  external:
+    iot:
+      base-url: http://104.211.95.241:8080/api
+      username: agms_user
+      password: 123456
+  automation-service:
+    base-url: http://localhost:8083
+
 eureka:
   client:
     service-url:
