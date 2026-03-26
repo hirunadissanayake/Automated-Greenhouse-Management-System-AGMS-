@@ -3,7 +3,10 @@ package com.agms.automation.service;
 import com.agms.automation.client.ZoneServiceClient;
 import com.agms.automation.dto.TelemetryEventRequest;
 import com.agms.automation.dto.ZoneThresholdResponse;
+import com.agms.automation.exception.BadRequestException;
+import com.agms.automation.exception.ServiceUnavailableException;
 import com.agms.automation.model.AutomationActionLog;
+import feign.FeignException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,10 +23,17 @@ public class AutomationService {
     }
 
     public void process(TelemetryEventRequest event) {
-        ZoneThresholdResponse zone = zoneServiceClient.getZoneById(event.getZoneId());
+        ZoneThresholdResponse zone;
+        try {
+            zone = zoneServiceClient.getZoneById(event.getZoneId());
+        } catch (FeignException.NotFound ex) {
+            throw new BadRequestException("Zone not found: " + event.getZoneId());
+        } catch (FeignException ex) {
+            throw new ServiceUnavailableException("Unable to validate zone thresholds right now.");
+        }
 
         if (zone == null) {
-            return;
+            throw new BadRequestException("Zone not found: " + event.getZoneId());
         }
 
         if (event.getTemperature() > zone.getMaxTemp()) {

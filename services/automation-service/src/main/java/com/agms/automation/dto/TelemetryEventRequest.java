@@ -1,10 +1,15 @@
 package com.agms.automation.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import java.time.Instant;
 
 public class TelemetryEventRequest {
+    @NotBlank
     private String zoneId;
+
+    @NotBlank
     private String deviceId;
+
     private double temperature;
     private double humidity;
     private Instant capturedAt;
