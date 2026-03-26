@@ -4,6 +4,7 @@ import com.agms.zone.dto.CreateZoneRequest;
 import com.agms.zone.dto.UpdateZoneRequest;
 import com.agms.zone.exception.BadRequestException;
 import com.agms.zone.exception.NotFoundException;
+import com.agms.zone.integration.ExternalIotDeviceClient;
 import com.agms.zone.model.Zone;
 import java.time.Instant;
 import java.util.Map;
@@ -15,16 +16,24 @@ import org.springframework.stereotype.Service;
 public class ZoneService {
 
     private final Map<String, Zone> zones = new ConcurrentHashMap<>();
+    private final ExternalIotDeviceClient externalIotDeviceClient;
+
+    public ZoneService(ExternalIotDeviceClient externalIotDeviceClient) {
+        this.externalIotDeviceClient = externalIotDeviceClient;
+    }
 
     public Zone create(CreateZoneRequest request) {
         validateThresholds(request.getMinTemp(), request.getMaxTemp());
 
+        String zoneId = UUID.randomUUID().toString();
+        String deviceId = externalIotDeviceClient.createDevice(zoneId, request.getName());
+
         Zone zone = new Zone(
-                UUID.randomUUID().toString(),
+                zoneId,
                 request.getName(),
                 request.getMinTemp(),
                 request.getMaxTemp(),
-                request.getDeviceId(),
+                deviceId,
                 Instant.now());
 
         zones.put(zone.getId(), zone);

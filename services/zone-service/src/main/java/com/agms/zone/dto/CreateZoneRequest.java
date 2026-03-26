@@ -9,8 +9,6 @@ public class CreateZoneRequest {
     private double minTemp;
     private double maxTemp;
 
-    private String deviceId;
-
     public String getName() {
         return name;
     }
@@ -35,11 +33,4 @@ public class CreateZoneRequest {
         this.maxTemp = maxTemp;
     }
 
-    public String getDeviceId() {
-        return deviceId;
-    }
-
-    public void setDeviceId(String deviceId) {
-        this.deviceId = deviceId;
-    }
 }
