@@ -7,6 +7,7 @@ import {
   fetchCrops,
   fetchLatestSensor,
   fetchZones,
+  processAutomation,
   updateCropStatus,
   updateZone,
 } from './api';
@@ -30,6 +31,10 @@ function App() {
   const [editMaxTemp, setEditMaxTemp] = useState(0);
   const [cropName, setCropName] = useState('Lettuce');
   const [cropQty, setCropQty] = useState(100);
+  const [manualZoneId, setManualZoneId] = useState('');
+  const [manualDeviceId, setManualDeviceId] = useState('');
+  const [manualTemp, setManualTemp] = useState(35);
+  const [manualHumidity, setManualHumidity] = useState(60);
   const [statusMessage, setStatusMessage] = useState('Ready');
 
   const canCallApi = useMemo(() => token.trim().length > 10, [token]);
@@ -170,6 +175,20 @@ function App() {
     }
   }
 
+  async function markHarvested(cropId) {
+    if (!canCallApi) {
+      setStatusMessage('Enter a valid JWT first.');
+      return;
+    }
+    try {
+      await updateCropStatus(baseUrl, token, cropId, 'HARVESTED');
+      setStatusMessage(`Crop ${cropId} moved to HARVESTED`);
+      await loadCrops();
+    } catch (err) {
+      setStatusMessage(err.message);
+    }
+  }
+
   async function loadLogsAndSensor() {
     if (!canCallApi) {
       setStatusMessage('Enter a valid JWT first.');
@@ -183,6 +202,27 @@ function App() {
       setLogs(logData);
       setLatestSensor(sensorData);
       setStatusMessage('Automation and sensor data loaded.');
+    } catch (err) {
+      setStatusMessage(err.message);
+    }
+  }
+
+  async function submitManualAutomation(event) {
+    event.preventDefault();
+    if (!canCallApi) {
+      setStatusMessage('Enter a valid JWT first.');
+      return;
+    }
+    try {
+      await processAutomation(baseUrl, token, {
+        zoneId: manualZoneId,
+        deviceId: manualDeviceId,
+        temperature: Number(manualTemp),
+        humidity: Number(manualHumidity),
+        capturedAt: new Date().toISOString(),
+      });
+      setStatusMessage('Manual automation event submitted.');
+      await loadLogsAndSensor();
     } catch (err) {
       setStatusMessage(err.message);
     }
@@ -317,9 +357,14 @@ function App() {
                     <strong>{crop.cropName}</strong>
                     <span>qty: {crop.quantity}</span>
                     <small>status: {crop.status}</small>
-                    {crop.status === 'SEEDLING' && (
-                      <button onClick={() => markVegetative(crop.id)}>Move to VEGETATIVE</button>
-                    )}
+                    <div className="inline-actions">
+                      {crop.status === 'SEEDLING' && (
+                        <button onClick={() => markVegetative(crop.id)}>Move to VEGETATIVE</button>
+                      )}
+                      {crop.status === 'VEGETATIVE' && (
+                        <button onClick={() => markHarvested(crop.id)}>Move to HARVESTED</button>
+                      )}
+                    </div>
                   </li>
                 ))}
                 {crops.length === 0 && <li>No crop batches loaded yet.</li>}
@@ -349,6 +394,26 @@ function App() {
 
             <div className="card">
               <h2>Automation Logs</h2>
+              <form className="edit-card" onSubmit={submitManualAutomation}>
+                <h3>Manual Process Trigger</h3>
+                <label>
+                  Zone ID
+                  <input value={manualZoneId} onChange={(e) => setManualZoneId(e.target.value)} placeholder="zone-id" />
+                </label>
+                <label>
+                  Device ID
+                  <input value={manualDeviceId} onChange={(e) => setManualDeviceId(e.target.value)} placeholder="device-id" />
+                </label>
+                <label>
+                  Temperature
+                  <input type="number" value={manualTemp} onChange={(e) => setManualTemp(e.target.value)} />
+                </label>
+                <label>
+                  Humidity
+                  <input type="number" value={manualHumidity} onChange={(e) => setManualHumidity(e.target.value)} />
+                </label>
+                <button type="submit">Send Event</button>
+              </form>
               <ul className="list">
                 {logs.map((log, idx) => (
                   <li key={`${log.zoneId}-${idx}`}>
