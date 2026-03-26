@@ -32,6 +32,8 @@ const TAB_META = {
   },
 };
 
+const PAGE_SIZE = 5;
+
 function formatRelativeTime(value) {
   if (!value) {
     return 'Waiting for telemetry';
@@ -54,9 +56,53 @@ function formatRelativeTime(value) {
   return `Updated ${diffHours} hr ago`;
 }
 
+function paginate(items, page, pageSize = PAGE_SIZE) {
+  const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const start = (safePage - 1) * pageSize;
+
+  return {
+    totalPages,
+    page: safePage,
+    start,
+    end: Math.min(start + pageSize, items.length),
+    items: items.slice(start, start + pageSize),
+  };
+}
+
+function Pagination({ label, pageData, onPrev, onNext }) {
+  if (pageData.totalPages <= 1) {
+    return null;
+  }
+
+  return (
+    <div className="pagination">
+      <span className="pagination-copy">
+        {label} {pageData.start + 1}-{pageData.end}
+      </span>
+      <div className="pagination-actions">
+        <button type="button" className="btn btn-ghost pagination-btn" onClick={onPrev} disabled={pageData.page === 1}>
+          Previous
+        </button>
+        <span className="pagination-page">
+          Page {pageData.page} / {pageData.totalPages}
+        </span>
+        <button
+          type="button"
+          className="btn btn-ghost pagination-btn"
+          onClick={onNext}
+          disabled={pageData.page === pageData.totalPages}
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [baseUrl, setBaseUrl] = useState('http://localhost:8080');
-  const [token, setToken] = useState('');
+  const [token, setToken] = useState(() => buildDevJwt(240, 'agms-ui-user'));
   const [activeTab, setActiveTab] = useState('zones');
   const [zones, setZones] = useState([]);
   const [crops, setCrops] = useState([]);
@@ -78,6 +124,9 @@ function App() {
   const [statusMessage, setStatusMessage] = useState('Ready');
   const [statusKind, setStatusKind] = useState('info');
   const [busyAction, setBusyAction] = useState('');
+  const [zonePage, setZonePage] = useState(1);
+  const [cropPage, setCropPage] = useState(1);
+  const [logPage, setLogPage] = useState(1);
 
   const canCallApi = useMemo(() => token.trim().length > 10, [token]);
   const tokenHint = useMemo(() => getJwtExpirationText(token), [token]);
@@ -93,6 +142,9 @@ function App() {
     () => crops.filter((crop) => crop.status === 'HARVESTED').length,
     [crops],
   );
+  const zonePageData = useMemo(() => paginate(zones, zonePage), [zones, zonePage]);
+  const cropPageData = useMemo(() => paginate(crops, cropPage), [crops, cropPage]);
+  const logPageData = useMemo(() => paginate(logs, logPage), [logs, logPage]);
 
   const zoneFormValid = zoneName.trim() && Number(minTemp) < Number(maxTemp);
   const cropFormValid = cropName.trim() && Number(cropQty) > 0;
@@ -118,6 +170,18 @@ function App() {
     }, 2500);
     return () => clearTimeout(timer);
   }, [statusMessage, statusKind]);
+
+  useEffect(() => {
+    setZonePage((current) => Math.min(current, Math.max(1, Math.ceil(zones.length / PAGE_SIZE))));
+  }, [zones.length]);
+
+  useEffect(() => {
+    setCropPage((current) => Math.min(current, Math.max(1, Math.ceil(crops.length / PAGE_SIZE))));
+  }, [crops.length]);
+
+  useEffect(() => {
+    setLogPage((current) => Math.min(current, Math.max(1, Math.ceil(logs.length / PAGE_SIZE))));
+  }, [logs.length]);
 
   function setInfo(message) {
     setStatusKind('info');
@@ -158,6 +222,7 @@ function App() {
       try {
         const data = await fetchZones(baseUrl, token);
         setZones(data);
+        setZonePage(1);
         if (data.length > 0 && !manualZoneId) {
           setManualZoneId(data[0].id);
           setManualDeviceId(data[0].deviceId || '');
@@ -253,6 +318,7 @@ function App() {
       try {
         const data = await fetchCrops(baseUrl, token);
         setCrops(data);
+        setCropPage(1);
         setOk(`Crops loaded (${data.length}).`);
       } catch (err) {
         setError(err.message);
@@ -325,6 +391,7 @@ function App() {
         ]);
         setLogs(logData);
         setLatestSensor(sensorData);
+        setLogPage(1);
         setOk('Automation and sensor data loaded.');
       } catch (err) {
         setError(err.message);
@@ -498,6 +565,7 @@ function App() {
                 <div>
                   <p className="section-kicker">Monitor</p>
                   <h2>Zone registry</h2>
+                  <p className="list-meta">{zones.length} total zones</p>
                 </div>
                 <button className="btn" onClick={loadZones} disabled={!canCallApi || busyAction === 'loadZones'}>
                   {busyAction === 'loadZones' ? 'Refreshing...' : 'Refresh'}
@@ -524,8 +592,14 @@ function App() {
                   </div>
                 </form>
               )}
+              <Pagination
+                label="Showing zones"
+                pageData={zonePageData}
+                onPrev={() => setZonePage((page) => Math.max(page - 1, 1))}
+                onNext={() => setZonePage((page) => Math.min(page + 1, zonePageData.totalPages))}
+              />
               <ul className="list">
-                {zones.map((zone) => (
+                {zonePageData.items.map((zone) => (
                   <li key={zone.id}>
                     <div className="list-row">
                       <div>
@@ -581,13 +655,20 @@ function App() {
                 <div>
                   <p className="section-kicker">Monitor</p>
                   <h2>Crop inventory</h2>
+                  <p className="list-meta">{crops.length} total crop batches</p>
                 </div>
                 <button className="btn" onClick={loadCrops} disabled={!canCallApi || busyAction === 'loadCrops'}>
                   {busyAction === 'loadCrops' ? 'Refreshing...' : 'Refresh'}
                 </button>
               </div>
+              <Pagination
+                label="Showing batches"
+                pageData={cropPageData}
+                onPrev={() => setCropPage((page) => Math.max(page - 1, 1))}
+                onNext={() => setCropPage((page) => Math.min(page + 1, cropPageData.totalPages))}
+              />
               <ul className="list">
-                {crops.map((crop) => (
+                {cropPageData.items.map((crop) => (
                   <li key={crop.id}>
                     <div className="list-row">
                       <div>
@@ -658,6 +739,7 @@ function App() {
                 <div>
                   <p className="section-kicker">Operate</p>
                   <h2>Automation queue</h2>
+                  <p className="list-meta">{logs.length} total actions</p>
                 </div>
                 <span className="badge badge-neutral">{logs.length} logs</span>
               </div>
@@ -694,9 +776,15 @@ function App() {
                 </div>
                 {selectedZone && <small className="hint">Selected device: {selectedZone.deviceId || 'not assigned yet'}</small>}
               </form>
+              <Pagination
+                label="Showing actions"
+                pageData={logPageData}
+                onPrev={() => setLogPage((page) => Math.max(page - 1, 1))}
+                onNext={() => setLogPage((page) => Math.min(page + 1, logPageData.totalPages))}
+              />
               <ul className="list">
-                {logs.map((log, idx) => (
-                  <li key={`${log.zoneId}-${idx}`}>
+                {logPageData.items.map((log, idx) => (
+                  <li key={`${log.zoneId}-${logPageData.start + idx}`}>
                     <div className="list-row">
                       <strong>{log.action}</strong>
                       <span className="badge badge-neutral">{log.zoneId}</span>

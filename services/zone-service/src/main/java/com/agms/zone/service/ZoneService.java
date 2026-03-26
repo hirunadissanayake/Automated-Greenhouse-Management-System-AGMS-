@@ -27,7 +27,12 @@ public class ZoneService {
         validateThresholds(request.getMinTemp(), request.getMaxTemp());
 
         String zoneId = UUID.randomUUID().toString();
-        String deviceId = externalIotDeviceClient.createDevice(zoneId, request.getName());
+        String deviceId = null;
+        try {
+            deviceId = externalIotDeviceClient.createDevice(zoneId, request.getName());
+        } catch (RuntimeException ignored) {
+            // Keep zone creation available even when the external IoT API is unavailable.
+        }
 
         Zone zone = new Zone(
                 zoneId,
