@@ -60,6 +60,12 @@ h2 {
   animation: rise 0.6s ease-out;
 }
 
+.token-hint {
+  color: #bdd8c7;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.7rem;
+}
+
 label {
   display: grid;
   gap: 0.35rem;
@@ -97,6 +103,12 @@ textarea {
   color: #fff;
   cursor: pointer;
   transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+.inline-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .tabs button:hover,
@@ -150,6 +162,20 @@ textarea {
   padding: 0.7rem;
   display: grid;
   gap: 0.2rem;
+}
+
+.edit-card {
+  border: 1px dashed rgba(20, 52, 30, 0.25);
+  border-radius: 0.7rem;
+  padding: 0.8rem;
+  display: grid;
+  gap: 0.6rem;
+  background: #f7fef6;
+}
+
+.edit-card h3 {
+  margin: 0;
+  font-size: 0.9rem;
 }
 
 .list small {
