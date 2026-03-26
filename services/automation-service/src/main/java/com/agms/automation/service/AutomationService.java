@@ -1,32 +1,26 @@
 package com.agms.automation.service;
 
+import com.agms.automation.client.ZoneServiceClient;
 import com.agms.automation.dto.TelemetryEventRequest;
 import com.agms.automation.dto.ZoneThresholdResponse;
 import com.agms.automation.model.AutomationActionLog;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
 @Service
 public class AutomationService {
 
-    private final RestTemplate restTemplate;
-    private final String zoneServiceBaseUrl;
+    private final ZoneServiceClient zoneServiceClient;
     private final List<AutomationActionLog> logs = new ArrayList<>();
 
-    public AutomationService(RestTemplate restTemplate,
-                             @Value("${agms.zone-service.base-url:http://localhost:8081}") String zoneServiceBaseUrl) {
-        this.restTemplate = restTemplate;
-        this.zoneServiceBaseUrl = zoneServiceBaseUrl;
+    public AutomationService(ZoneServiceClient zoneServiceClient) {
+        this.zoneServiceClient = zoneServiceClient;
     }
 
     public void process(TelemetryEventRequest event) {
-        ZoneThresholdResponse zone = restTemplate.getForObject(
-                zoneServiceBaseUrl + "/api/zones/" + event.getZoneId(),
-                ZoneThresholdResponse.class);
+        ZoneThresholdResponse zone = zoneServiceClient.getZoneById(event.getZoneId());
 
         if (zone == null) {
             return;
