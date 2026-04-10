@@ -6,20 +6,20 @@ import com.agms.zone.exception.BadRequestException;
 import com.agms.zone.exception.NotFoundException;
 import com.agms.zone.integration.ExternalIotDeviceClient;
 import com.agms.zone.model.Zone;
+import com.agms.zone.repository.ZoneRepository;
 import java.time.Instant;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ZoneService {
 
-    private final Map<String, Zone> zones = new ConcurrentHashMap<>();
+    private final ZoneRepository zoneRepository;
     private final ExternalIotDeviceClient externalIotDeviceClient;
 
-    public ZoneService(ExternalIotDeviceClient externalIotDeviceClient) {
+    public ZoneService(ZoneRepository zoneRepository, ExternalIotDeviceClient externalIotDeviceClient) {
+        this.zoneRepository = zoneRepository;
         this.externalIotDeviceClient = externalIotDeviceClient;
     }
 
@@ -42,20 +42,16 @@ public class ZoneService {
                 deviceId,
                 Instant.now());
 
-        zones.put(zone.getId(), zone);
-        return zone;
+        return zoneRepository.save(zone);
     }
 
     public Zone findById(String id) {
-        Zone zone = zones.get(id);
-        if (zone == null) {
-            throw new NotFoundException("Zone not found: " + id);
-        }
-        return zone;
+        return zoneRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Zone not found: " + id));
     }
 
     public List<Zone> list() {
-        return zones.values().stream().toList();
+        return zoneRepository.findAllByOrderByCreatedAtDesc();
     }
 
     public Zone update(String id, UpdateZoneRequest request) {
@@ -64,13 +60,14 @@ public class ZoneService {
         existing.setName(request.getName());
         existing.setMinTemp(request.getMinTemp());
         existing.setMaxTemp(request.getMaxTemp());
-        return existing;
+        return zoneRepository.save(existing);
     }
 
     public void delete(String id) {
-        if (zones.remove(id) == null) {
+        if (!zoneRepository.existsById(id)) {
             throw new NotFoundException("Zone not found: " + id);
         }
+        zoneRepository.deleteById(id);
     }
 
     private void validateThresholds(double minTemp, double maxTemp) {
