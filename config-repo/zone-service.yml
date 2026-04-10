@@ -4,9 +4,9 @@ server:
 agms:
   external:
     iot:
-      base-url: http://104.211.95.241:8080/api
-      username: agms_user
-      password: 123456
+      base-url: ${AGMS_IOT_BASE_URL:http://localhost:8080/api}
+      username: ${AGMS_IOT_USERNAME:agms_user}
+      password: ${AGMS_IOT_PASSWORD:123456}
 
 eureka:
   client:
