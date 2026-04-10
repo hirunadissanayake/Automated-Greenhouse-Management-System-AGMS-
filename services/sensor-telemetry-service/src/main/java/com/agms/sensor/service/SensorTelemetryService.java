@@ -13,6 +13,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
 @Service
@@ -58,14 +59,14 @@ public class SensorTelemetryService {
 
     private List<Map<String, Object>> fetchDevices() {
         ensureLoggedIn();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
-
-        HttpEntity<Void> request = new HttpEntity<>(headers);
-        Map[] devices = restTemplate
-                .exchange(iotProperties.getBaseUrl() + "/devices", org.springframework.http.HttpMethod.GET, request, Map[].class)
-                .getBody();
+        Map[] devices;
+        try {
+            devices = doFetchDevices();
+        } catch (HttpClientErrorException.Unauthorized ex) {
+            accessToken = null;
+            ensureLoggedIn();
+            devices = doFetchDevices();
+        }
 
         if (devices == null) {
             return List.of();
@@ -80,18 +81,14 @@ public class SensorTelemetryService {
 
     private TelemetryEvent fetchDeviceTelemetry(String deviceId) {
         ensureLoggedIn();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(accessToken);
-
-        HttpEntity<Void> request = new HttpEntity<>(headers);
-
-        Map payload = restTemplate
-                .exchange(iotProperties.getBaseUrl() + "/devices/telemetry/" + deviceId,
-                        org.springframework.http.HttpMethod.GET,
-                        request,
-                        Map.class)
-                .getBody();
+        Map payload;
+        try {
+            payload = doFetchDeviceTelemetry(deviceId);
+        } catch (HttpClientErrorException.Unauthorized ex) {
+            accessToken = null;
+            ensureLoggedIn();
+            payload = doFetchDeviceTelemetry(deviceId);
+        }
 
         if (payload == null) {
             return null;
@@ -106,6 +103,29 @@ public class SensorTelemetryService {
         Object capturedAt = payload.get("capturedAt");
         event.setCapturedAt(capturedAt == null ? Instant.now() : Instant.parse(capturedAt.toString()));
         return event;
+    }
+
+    private Map[] doFetchDevices() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+        return restTemplate
+                .exchange(iotProperties.getBaseUrl() + "/devices", org.springframework.http.HttpMethod.GET, request, Map[].class)
+                .getBody();
+    }
+
+    private Map doFetchDeviceTelemetry(String deviceId) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+        return restTemplate
+                .exchange(iotProperties.getBaseUrl() + "/devices/telemetry/" + deviceId,
+                        org.springframework.http.HttpMethod.GET,
+                        request,
+                        Map.class)
+                .getBody();
     }
 
     private void ensureLoggedIn() {
