@@ -7,11 +7,12 @@ import {
   fetchCrops,
   fetchLatestSensor,
   fetchZones,
+  loginAuth,
   processAutomation,
   updateCropStatus,
   updateZone,
 } from './api';
-import { buildDevJwt, getJwtExpirationText } from './utils/jwt';
+import { getJwtExpirationText } from './utils/jwt';
 import './App.css';
 
 const TAB_META = {
@@ -102,7 +103,10 @@ function Pagination({ label, pageData, onPrev, onNext }) {
 
 function App() {
   const [baseUrl, setBaseUrl] = useState('http://localhost:8080');
-  const [token, setToken] = useState(() => buildDevJwt(240, 'agms-ui-user'));
+  const [token, setToken] = useState(() => localStorage.getItem('agmsToken') || '');
+  const [loginUsername, setLoginUsername] = useState('agms_user');
+  const [loginPassword, setLoginPassword] = useState('123456');
+  const [isAuthenticated, setIsAuthenticated] = useState(() => (localStorage.getItem('agmsToken') || '').trim().length > 10);
   const [activeTab, setActiveTab] = useState('zones');
   const [zones, setZones] = useState([]);
   const [crops, setCrops] = useState([]);
@@ -128,7 +132,7 @@ function App() {
   const [cropPage, setCropPage] = useState(1);
   const [logPage, setLogPage] = useState(1);
 
-  const canCallApi = useMemo(() => token.trim().length > 10, [token]);
+  const canCallApi = useMemo(() => isAuthenticated && token.trim().length > 10, [isAuthenticated, token]);
   const tokenHint = useMemo(() => getJwtExpirationText(token), [token]);
   const selectedZone = useMemo(
     () => zones.find((zone) => zone.id === manualZoneId),
@@ -159,6 +163,14 @@ function App() {
     setStatusKind('info');
     setStatusMessage(`${tabLabel} workspace ready.`);
   }, [activeTab]);
+
+  useEffect(() => {
+    if (token.trim().length > 10) {
+      localStorage.setItem('agmsToken', token);
+    } else {
+      localStorage.removeItem('agmsToken');
+    }
+  }, [token]);
 
   useEffect(() => {
     if (statusKind === 'error') {
@@ -207,10 +219,28 @@ function App() {
     }
   }
 
-  function applyDevToken() {
-    const next = buildDevJwt(240, 'agms-ui-user');
-    setToken(next);
-    setOk('Generated development JWT token.');
+  async function submitLogin(event) {
+    event.preventDefault();
+    await withBusy('login', async () => {
+      try {
+        const payload = await loginAuth(baseUrl, loginUsername, loginPassword);
+        setToken(payload.accessToken || '');
+        setIsAuthenticated(Boolean(payload.accessToken));
+        window.location.hash = '#/dashboard';
+        setOk(`Welcome ${payload.username || loginUsername}`);
+      } catch (err) {
+        setIsAuthenticated(false);
+        setToken('');
+        setError(err.message);
+      }
+    });
+  }
+
+  function logout() {
+    setToken('');
+    setIsAuthenticated(false);
+    window.location.hash = '#/login';
+    setInfo('Signed out.');
   }
 
   async function loadZones() {
@@ -437,6 +467,51 @@ function App() {
 
   const activeTabMeta = TAB_META[activeTab];
 
+  if (!isAuthenticated) {
+    return (
+      <main className="agms-shell login-shell">
+        <section className="login-card card">
+          <p className="eyebrow">Automated Greenhouse Management System</p>
+          <h1>AGMS Operations Console</h1>
+          <p className="subcopy">Sign in to access your dashboard.</p>
+
+          <form onSubmit={submitLogin} className="login-form">
+            <label>
+              Gateway URL
+              <input
+                value={baseUrl}
+                onChange={(e) => setBaseUrl(e.target.value)}
+                placeholder="http://localhost:8080"
+              />
+            </label>
+            <label>
+              Username
+              <input
+                value={loginUsername}
+                onChange={(e) => setLoginUsername(e.target.value)}
+                placeholder="agms_user"
+              />
+            </label>
+            <label>
+              Password
+              <input
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                placeholder="Enter password"
+              />
+            </label>
+            <button type="submit" className="btn" disabled={busyAction === 'login'}>
+              {busyAction === 'login' ? 'Signing in...' : 'Login'}
+            </button>
+          </form>
+
+          <small className={`status-text ${statusKind}`}>{statusMessage}</small>
+        </section>
+      </main>
+    );
+  }
+
   return (
     <main className="agms-shell">
       <section className="hero-panel">
@@ -483,7 +558,7 @@ function App() {
             />
           </label>
           <div className="inline-actions">
-            <button type="button" onClick={applyDevToken} className="btn btn-accent">Generate Dev Token</button>
+            <button type="button" onClick={logout} className="btn btn-danger">Logout</button>
           </div>
           <small className="token-hint">{tokenHint}</small>
         </aside>
