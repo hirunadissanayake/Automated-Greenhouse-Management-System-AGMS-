@@ -1,12 +1,31 @@
 package com.agms.crop.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.time.Instant;
 
+@Entity
+@Table(name = "crop_batches")
 public class CropBatch {
+    @Id
+    @Column(name = "id", nullable = false, length = 36)
     private String id;
+
+    @Column(name = "crop_name", nullable = false, length = 120)
     private String cropName;
+
+    @Column(name = "quantity", nullable = false)
     private int quantity;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
     private CropStatus status;
+
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     public CropBatch() {
