@@ -19,6 +19,18 @@ async function buildApiError(prefix, res) {
   return new Error(suffix ? `${prefix} (${res.status}): ${suffix}` : `${prefix} (${res.status})`);
 }
 
+export async function loginAuth(baseUrl, username, password) {
+  const res = await fetch(`${baseUrl}/api/auth/login`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ username, password }),
+  });
+  if (!res.ok) throw await buildApiError('Login failed', res);
+  return res.json();
+}
+
 export async function fetchZones(baseUrl, token) {
   const res = await fetch(`${baseUrl}/api/zones`, {
     headers: jsonHeaders(token),
