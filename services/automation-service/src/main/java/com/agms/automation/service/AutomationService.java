@@ -6,9 +6,9 @@ import com.agms.automation.dto.ZoneThresholdResponse;
 import com.agms.automation.exception.BadRequestException;
 import com.agms.automation.exception.ServiceUnavailableException;
 import com.agms.automation.model.AutomationActionLog;
+import com.agms.automation.repository.AutomationActionLogRepository;
 import feign.FeignException;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
@@ -16,10 +16,11 @@ import org.springframework.stereotype.Service;
 public class AutomationService {
 
     private final ZoneServiceClient zoneServiceClient;
-    private final List<AutomationActionLog> logs = new ArrayList<>();
+    private final AutomationActionLogRepository automationActionLogRepository;
 
-    public AutomationService(ZoneServiceClient zoneServiceClient) {
+    public AutomationService(ZoneServiceClient zoneServiceClient, AutomationActionLogRepository automationActionLogRepository) {
         this.zoneServiceClient = zoneServiceClient;
+        this.automationActionLogRepository = automationActionLogRepository;
     }
 
     public void process(TelemetryEventRequest event) {
@@ -37,7 +38,7 @@ public class AutomationService {
         }
 
         if (event.getTemperature() > zone.getMaxTemp()) {
-            logs.add(new AutomationActionLog(
+            automationActionLogRepository.save(new AutomationActionLog(
                     event.getZoneId(),
                     event.getDeviceId(),
                     "TURN_FAN_ON",
@@ -46,7 +47,7 @@ public class AutomationService {
         }
 
         if (event.getTemperature() < zone.getMinTemp()) {
-            logs.add(new AutomationActionLog(
+            automationActionLogRepository.save(new AutomationActionLog(
                     event.getZoneId(),
                     event.getDeviceId(),
                     "TURN_HEATER_ON",
@@ -56,6 +57,6 @@ public class AutomationService {
     }
 
     public List<AutomationActionLog> getLogs() {
-        return List.copyOf(logs);
+        return automationActionLogRepository.findAllByOrderByCapturedAtDesc();
     }
 }
