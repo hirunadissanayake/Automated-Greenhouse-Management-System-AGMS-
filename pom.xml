@@ -24,6 +24,7 @@
         <module>infrastructure/service-registry</module>
         <module>infrastructure/config-server</module>
         <module>infrastructure/api-gateway</module>
+        <module>services/iot-server-service</module>
         <module>services/zone-service</module>
         <module>services/sensor-telemetry-service</module>
         <module>services/automation-service</module>
