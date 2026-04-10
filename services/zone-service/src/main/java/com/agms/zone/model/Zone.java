@@ -1,13 +1,31 @@
 package com.agms.zone.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.time.Instant;
 
+@Entity
+@Table(name = "zones")
 public class Zone {
+    @Id
+    @Column(name = "id", nullable = false, length = 36)
     private String id;
+
+    @Column(name = "name", nullable = false, length = 120)
     private String name;
+
+    @Column(name = "min_temp", nullable = false)
     private double minTemp;
+
+    @Column(name = "max_temp", nullable = false)
     private double maxTemp;
+
+    @Column(name = "device_id", length = 36)
     private String deviceId;
+
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     public Zone() {
