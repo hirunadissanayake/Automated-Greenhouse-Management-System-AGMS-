@@ -5,22 +5,26 @@ import com.agms.iot.dto.DeviceResponse;
 import com.agms.iot.dto.SensorValueResponse;
 import com.agms.iot.dto.TelemetryResponse;
 import com.agms.iot.model.Device;
+import com.agms.iot.repository.DeviceRepository;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 @Service
 public class DeviceService {
 
-    private final Map<String, Device> devicesById = new ConcurrentHashMap<>();
+    private final DeviceRepository deviceRepository;
     private final Map<String, TelemetryResponse> telemetryByDeviceId = new ConcurrentHashMap<>();
     private final Random random = new Random();
+
+    public DeviceService(DeviceRepository deviceRepository) {
+        this.deviceRepository = deviceRepository;
+    }
 
     public DeviceResponse create(String userId, DeviceRequest request) {
         Device device = new Device();
@@ -30,30 +34,21 @@ public class DeviceService {
         device.setUserId(userId);
         device.setCreatedAt(Instant.now());
 
-        devicesById.put(device.getDeviceId(), device);
+        deviceRepository.save(device);
         telemetryByDeviceId.put(device.getDeviceId(), initialTelemetry(device));
 
         return toResponse(device);
     }
 
     public List<DeviceResponse> listByUser(String userId, int page, int size) {
-        int fromIndex = page * size;
-        List<DeviceResponse> all = devicesById.values().stream()
-                .filter(device -> device.getUserId().equals(userId))
-                .sorted(Comparator.comparing(Device::getCreatedAt).reversed())
+        return deviceRepository.findByUserIdOrderByCreatedAtDesc(userId, PageRequest.of(page, size))
+                .stream()
                 .map(this::toResponse)
                 .toList();
-
-        if (fromIndex >= all.size()) {
-            return List.of();
-        }
-
-        int toIndex = Math.min(fromIndex + size, all.size());
-        return new ArrayList<>(all.subList(fromIndex, toIndex));
     }
 
     public TelemetryResponse refreshAndGet(String userId, String deviceId) {
-        Device device = devicesById.get(deviceId);
+        Device device = deviceRepository.findById(deviceId).orElse(null);
         if (device == null || !device.getUserId().equals(userId)) {
             throw new IllegalArgumentException("Device not found");
         }
