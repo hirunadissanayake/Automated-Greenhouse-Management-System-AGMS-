@@ -90,4 +90,19 @@ Default IoT seed credentials for local development:
 ## Submission Evidence
 
 - Postman collection is included in `postman/`
-- Add Eureka screenshot to `docs/eureka-dashboard-up.png`
+
+## Screenshots
+
+### Frontend
+
+![AGMS Login Screen](docs/screenshots/screencapture-localhost-5173-2026-04-10-21_07_41.png)
+
+![AGMS Dashboard View 1](docs/screenshots/screencapture-localhost-5173-2026-04-10-21_10_32.png)
+
+![AGMS Dashboard View 2](docs/screenshots/screencapture-localhost-5173-2026-04-10-21_10_49.png)
+
+![AGMS Dashboard View 3](docs/screenshots/screencapture-localhost-5173-2026-04-10-21_11_39.png)
+
+### Eureka
+
+![Eureka Dashboard Up](docs/screenshots/screencapture-localhost-8761-2026-04-10-21_39_48.png)
