@@ -1,0 +1,33 @@
+spring:
+  config:
+    import: "optional:configserver:"
+  cloud:
+    config:
+      enabled: false
+      import-check:
+        enabled: false
+  datasource:
+    url: jdbc:h2:mem:agms_iot_test;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+eureka:
+  client:
+    enabled: false
+
+agms:
+  iot:
+    jwt:
+      secret: test-jwt-secret-key
+      access-expiration-seconds: 900
+      refresh-expiration-seconds: 604800
+    seed-user:
+      username: agms_user
+      password: 123456
