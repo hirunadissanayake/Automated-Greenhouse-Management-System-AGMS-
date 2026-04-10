@@ -11,6 +11,8 @@ public class RouteConfig {
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
         return builder.routes()
+                .route("iot-auth-service", r -> r.path("/api/auth/**").uri("lb://iot-server-service"))
+                .route("iot-device-service", r -> r.path("/api/devices/**").uri("lb://iot-server-service"))
                 .route("zone-service", r -> r.path("/api/zones/**").uri("lb://zone-service"))
                 .route("sensor-telemetry-service", r -> r.path("/api/sensors/**").uri("lb://sensor-telemetry-service"))
                 .route("automation-service", r -> r.path("/api/automation/**").uri("lb://automation-service"))
