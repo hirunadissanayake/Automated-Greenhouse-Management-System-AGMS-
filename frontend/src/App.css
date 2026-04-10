@@ -22,6 +22,22 @@
   padding: 1.5rem;
 }
 
+.login-shell {
+  display: grid;
+  place-items: center;
+}
+
+.login-card {
+  width: min(32rem, 100%);
+  background: var(--bg-panel);
+  backdrop-filter: blur(14px);
+}
+
+.login-form {
+  display: grid;
+  gap: 0.8rem;
+}
+
 .hero-panel,
 .workspace-header,
 .grid-two,
