@@ -1,0 +1,17 @@
+server:
+  port: 8085
+
+agms:
+  iot:
+    jwt:
+      secret: ${AGMS_IOT_JWT_SECRET:change-this-default-secret-for-dev-only}
+      access-expiration-seconds: 900
+      refresh-expiration-seconds: 604800
+    seed-user:
+      username: ${AGMS_IOT_USERNAME:agms_user}
+      password: ${AGMS_IOT_PASSWORD:123456}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka
