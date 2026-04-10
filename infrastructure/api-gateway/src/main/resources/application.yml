@@ -24,6 +24,14 @@ spring:
               - X-Auth-Error
             allowCredentials: false
       routes:
+        - id: iot-auth-service
+          uri: lb://iot-server-service
+          predicates:
+            - Path=/api/auth/**
+        - id: iot-device-service
+          uri: lb://iot-server-service
+          predicates:
+            - Path=/api/devices/**
         - id: zone-service
           uri: lb://zone-service
           predicates:
